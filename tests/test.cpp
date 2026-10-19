@@ -37,7 +37,8 @@ int main() {
   CHECK(!Calibration(bad, 2).valid());
   CHECK(!Calibration(0, 2).valid());
   Point huge[] = {{-1e308, 0}, {1e308, 1}};
-  CHECK(Calibration(huge, 2).evaluate(0).status == Status::NumericError);
+  CHECK(Calibration(huge, 2).evaluate(0).status == Status::Ok);
+  CHECK(Calibration(huge, 2).evaluate(0).value == 0.5);
   for (int i = 0; i <= 100; ++i)
     CHECK(near(c.evaluate(i).value, 10 + 2.0 * i));
 

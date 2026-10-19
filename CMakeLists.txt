@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(SuperJupiterCalibration VERSION 0.1.0 LANGUAGES CXX)
+project(SuperJupiterCalibration VERSION 0.1.1 LANGUAGES CXX)
 
 set(_superjupiter_calibration_top_level OFF)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -19,6 +19,9 @@ target_compile_features(SuperJupiterCalibration INTERFACE cxx_std_11)
 
 if(SUPERJUPITER_CALIBRATION_BUILD_TESTS)
   enable_testing()
+  add_executable(superjupiter-calibration-review tests/review_regressions.cpp)
+  target_link_libraries(superjupiter-calibration-review PRIVATE SuperJupiter::Calibration)
+  add_test(NAME superjupiter-calibration-review COMMAND superjupiter-calibration-review)
   add_executable(superjupiter-calibration-tests tests/test.cpp)
   target_link_libraries(superjupiter-calibration-tests PRIVATE SuperJupiter::Calibration)
   add_test(NAME superjupiter-calibration-tests COMMAND superjupiter-calibration-tests)
