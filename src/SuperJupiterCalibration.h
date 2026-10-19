@@ -5,13 +5,30 @@
 #if defined(__FAST_MATH__) || (defined(__FINITE_MATH_ONLY__) && __FINITE_MATH_ONLY__ > 0)
 #error "SuperJupiter requires IEEE non-finite checks; disable fast-math"
 #endif
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <limits>
+#include <float.h>
+#include <math.h>
+#include <stddef.h>
+#include <stdint.h>
 #define SUPERJUPITER_CALIBRATION_VERSION "0.1.0"
 namespace superjupiter {
 namespace calibration {
+
+namespace detail {
+inline bool finite(double value) { return value == value && value >= -DBL_MAX && value <= DBL_MAX; }
+inline double oneMinusExpNegative(double ratio) {
+  // Stable at small elapsed/tau without requiring AVR's unavailable expm1.
+  if (ratio < 0.01) {
+    double term = ratio, total = ratio;
+    for (unsigned n = 2; n <= 12; ++n) {
+      term *= -ratio / n;
+      total += term;
+    }
+    return total;
+  }
+  return 1 - ::exp(-ratio);
+}
+} // namespace detail
+
 enum class Bounds { Reject, Clamp, Extrapolate };
 enum class Status {
   Ok,
@@ -49,7 +66,7 @@ public:
     if (!points_ || count_ < 2)
       return false;
     for (size_t i = 0; i < count_; ++i)
-      if (!std::isfinite(points_[i].input) || !std::isfinite(points_[i].output) ||
+      if (!detail::finite(points_[i].input) || !detail::finite(points_[i].output) ||
           (i && points_[i].input <= points_[i - 1].input))
         return false;
     return true;
@@ -58,7 +75,7 @@ public:
     Result r = {Status::InvalidTable, raw, 0, revision_};
     if (!valid())
       return r;
-    if (!std::isfinite(raw)) {
+    if (!detail::finite(raw)) {
       r.status = Status::InvalidInput;
       return r;
     }
@@ -80,8 +97,8 @@ public:
     const double span = b.input - a.input, delta = b.output - a.output;
     const double fraction = (raw - a.input) / span;
     r.value = a.output + fraction * delta;
-    if (!std::isfinite(span) || !std::isfinite(delta) || !std::isfinite(fraction) ||
-        !std::isfinite(r.value)) {
+    if (!detail::finite(span) || !detail::finite(delta) || !detail::finite(fraction) ||
+        !detail::finite(r.value)) {
       r.status = Status::NumericError;
       r.value = 0;
       return r;
